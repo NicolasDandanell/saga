@@ -1,0 +1,3 @@
+[submodule "test/aceunit"]
+	path = test/aceunit
+	url = https://github.com/christianhujer/aceunit.git
