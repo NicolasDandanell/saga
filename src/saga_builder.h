@@ -1,8 +1,6 @@
 #ifndef SAGA_BUILDER_H
 #define SAGA_BUILDER_H
 
-#include <string.h>
-
 #include "saga_preprocessor.h" // Included first!
 #include "saga_hash.h"
 #include "saga_data.h"
@@ -35,7 +33,9 @@
 #define SAGA_PARSE_ARGS(...) _SAGA_PARSE_ARGS(__VA_ARGS__)
 
 #define SAGA_ADD_BYTES(arg, array, counter) do {                                \
-    memcpy((uint8_t*)&array[counter], (uint8_t*)&arg, SAGA_GET_TYPE_SIZE(arg)); \
+    for (size_t i = 0; i < SAGA_GET_TYPE_SIZE(arg)) {                           \
+        ((uint8_t*)&array[counter])[i] = ((uint8_t*)&arg)[i];                   \
+    }                                                                           \
 } while(0)
 
 #define SAGA_POPULATE_ARRAY(array, ...) SAGA_PARSE_ARGS(array, 0, ##__VA_ARGS__)
