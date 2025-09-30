@@ -1,6 +1,8 @@
 #ifndef SAGA_DATA_H
 #define SAGA_DATA_H
 
+#include "saga_preprocessor.h"
+
 // Count Data Bytes Size
 // ——————————————————————
 
@@ -8,11 +10,11 @@
 #define SAGA_GET_TYPE_SIZE(...) _SAGA_GET_TYPE_SIZE(__VA_ARGS__)
 
 // Check if any args at all. Return 0 if none
-#define SAGA_COUNT_BYTES_FIRST(function, ...)              \
-    SAGA_IF_ELSE(SAGA_HAS_ARGS(__VA_ARGS__))(              \
-        SAGA_DEFER3(_COUNT_BYTES)()(function, __VA_ARGS__) \
-    )(                                                     \
-        0                                                  \
+#define SAGA_COUNT_BYTES_FIRST(function, ...)               \
+    SAGA_IF_ELSE(SAGA_HAS_ARGS(__VA_ARGS__))(               \
+        SAGA_DEFER_3(_COUNT_BYTES)()(function, __VA_ARGS__) \
+    )(                                                      \
+        0                                                   \
     )
 
 // Get the size of the arg, and if there are more add the next one:
@@ -20,12 +22,12 @@
 // Second call: sizeOfArg_2 +
 // ...
 // Last call:   sizeOfArg_Last
-#define SAGA_COUNT_BYTES(function, first, ...)                            \
-    function(first)                                                       \
-    SAGA_IF_ELSE(SAGA_HAS_ARGS(__VA_ARGS__))(                             \
-        SAGA_ADD(SAGA_DEFER3(_SAGA_COUNT_BYTES)()(function, __VA_ARGS__)) \
-    )(                                                                    \
-        /* Do nothing, just terminate */                                  \
+#define SAGA_COUNT_BYTES(function, first, ...)                             \
+    function(first)                                                        \
+    SAGA_IF_ELSE(SAGA_HAS_ARGS(__VA_ARGS__))(                              \
+        SAGA_ADD(SAGA_DEFER_3(_SAGA_COUNT_BYTES)()(function, __VA_ARGS__)) \
+    )(                                                                     \
+        /* Do nothing, just terminate */                                   \
     )
 
 #define _SAGA_COUNT_BYTES() SAGA_COUNT_BYTES // Indirect call to force macro expansion and allow recursion (A macro can by default not call itself)
@@ -159,18 +161,18 @@
 #define SAGA_PARSE_DATA_SIZE_SECOND(first, ...)                                                  \
     /* Begin array brackets here --> */ { SAGA_GET_TYPE_INFO(first) /* No comma on first byte */ \
     SAGA_IF_ELSE(SAGA_HAS_ARGS(__VA_ARGS__))(                                                    \
-        SAGA_DEFER3(_SAGA_PARSE_DATA_SIZE)()(__VA_ARGS__)                                        \
+        SAGA_DEFER_3(_SAGA_PARSE_DATA_SIZE)()(__VA_ARGS__)                                       \
     )(                                                                                           \
         } /* Close brackets and terminate */                                                     \
     )
 
 // Parse all remaining arguments, and close the brackets when there are none left, like so: ", secondArg, thirdArg ... }"
-#define SAGA_PARSE_DATA_SIZE(first, ...)                  \
-    /* Comma added here --> */, SAGA_GET_TYPE_INFO(first) \
-    SAGA_IF_ELSE(SAGA_HAS_ARGS(__VA_ARGS__))(             \
-        SAGA_DEFER3(_SAGA_PARSE_DATA_SIZE)()(__VA_ARGS__) \
-    )(                                                    \
-        } /* Close brackets and terminate */              \
+#define SAGA_PARSE_DATA_SIZE(first, ...)                   \
+    /* Comma added here --> */, SAGA_GET_TYPE_INFO(first)  \
+    SAGA_IF_ELSE(SAGA_HAS_ARGS(__VA_ARGS__))(              \
+        SAGA_DEFER_3(_SAGA_PARSE_DATA_SIZE)()(__VA_ARGS__) \
+    )(                                                     \
+        } /* Close brackets and terminate */               \
     )
 
 #define _SAGA_PARSE_DATA_SIZE() SAGA_PARSE_DATA_SIZE // Indirect call to force macro expansion and allow recursion (A macro can by default not call itself)

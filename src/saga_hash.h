@@ -1,6 +1,8 @@
 #ifndef SAGA_HASH_H
 #define SAGA_HASH_H
 
+#include "saga_preprocessor.h"
+
 // String SAGA_HASH
 // ————————————
 
@@ -50,7 +52,7 @@
 
 // Check if any arguments at all. Return 0 if none
 #define SAGA_HASH_ARG_FIRST(level, hash, ...)                  \
-    SAGA_IF_ELSE(HAS_ARGS(__VA_ARGS__))(                       \
+    SAGA_IF_ELSE(SAGA_HAS_ARGS(__VA_ARGS__))(                  \
         SAGA_HASH_ARG(level, hash, __VA_ARGS__)                \
     )(                                                         \
         SAGA_HASH_ARG_LAST(level, hash) /* And nothing else */ \
@@ -58,8 +60,8 @@
 
 // Check if more than one. Return the size of the first if only one, or use it as the starting value of the hash if more than one argument
 #define SAGA_HASH_ARG(level, hash, first, ...)                                                                    \
-    SAGA_IF_ELSE(HAS_ARGS(__VA_ARGS__))(                                                                          \
-        SAGA_DEFER3(_SAGA_HASH_ARG)()(level, SAGA_DATA_HASH(SAGA_GET_TYPE_SIZE(first), hash), __VA_ARGS__)        \
+    SAGA_IF_ELSE(SAGA_HAS_ARGS(__VA_ARGS__))(                                                                     \
+        SAGA_DEFER_3(_SAGA_HASH_ARG)()(level, SAGA_DATA_HASH(SAGA_GET_TYPE_SIZE(first), hash), __VA_ARGS__)       \
     )(                                                                                                            \
         SAGA_HASH_ARG_LAST(level, SAGA_DATA_HASH(SAGA_GET_TYPE_SIZE(first), hash)) /* And no further recursion */ \
     )

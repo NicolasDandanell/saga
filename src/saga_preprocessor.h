@@ -10,23 +10,23 @@
 // ————————————————
 
 #define SAGA_EVAL(...)     SAGA_EVAL1024(__VA_ARGS__)
-#define SAGA_EVAL1024(...) SAGA_EVAL512(EVAL512(__VA_ARGS__))
-#define SAGA_EVAL512(...)  SAGA_EVAL256(EVAL256(__VA_ARGS__))
-#define SAGA_EVAL256(...)  SAGA_EVAL128(EVAL128(__VA_ARGS__))
-#define SAGA_EVAL128(...)  SAGA_EVAL64(EVAL64(__VA_ARGS__))
-#define SAGA_EVAL64(...)   SAGA_EVAL32(EVAL32(__VA_ARGS__))
-#define SAGA_EVAL32(...)   SAGA_EVAL16(EVAL16(__VA_ARGS__))
-#define SAGA_EVAL16(...)   SAGA_EVAL8(EVAL8(__VA_ARGS__))
-#define SAGA_EVAL8(...)    SAGA_EVAL4(EVAL4(__VA_ARGS__))
-#define SAGA_EVAL4(...)    SAGA_EVAL2(EVAL2(__VA_ARGS__))
-#define SAGA_EVAL2(...)    SAGA_EVAL1(EVAL1(__VA_ARGS__))
+#define SAGA_EVAL1024(...) SAGA_EVAL512(SAGA_EVAL512(__VA_ARGS__))
+#define SAGA_EVAL512(...)  SAGA_EVAL256(SAGA_EVAL256(__VA_ARGS__))
+#define SAGA_EVAL256(...)  SAGA_EVAL128(SAGA_EVAL128(__VA_ARGS__))
+#define SAGA_EVAL128(...)  SAGA_EVAL64(SAGA_EVAL64(__VA_ARGS__))
+#define SAGA_EVAL64(...)   SAGA_EVAL32(SAGA_EVAL32(__VA_ARGS__))
+#define SAGA_EVAL32(...)   SAGA_EVAL16(SAGA_EVAL16(__VA_ARGS__))
+#define SAGA_EVAL16(...)   SAGA_EVAL8(SAGA_EVAL8(__VA_ARGS__))
+#define SAGA_EVAL8(...)    SAGA_EVAL4(SAGA_EVAL4(__VA_ARGS__))
+#define SAGA_EVAL4(...)    SAGA_EVAL2(SAGA_EVAL2(__VA_ARGS__))
+#define SAGA_EVAL2(...)    SAGA_EVAL1(SAGA_EVAL1(__VA_ARGS__))
 #define SAGA_EVAL1(...)    __VA_ARGS__
 
 #define SAGA_EXPAND_EMPTY() /* This macro expands to nothing */
 
-#define SAGA_DEFER1(m) m SAGA_EXPAND_EMPTY()
-#define SAGA_DEFER2(m) m SAGA_EXPAND_EMPTY SAGA_EXPAND_EMPTY()()
-#define SAGA_DEFER3(m) m SAGA_EXPAND_EMPTY SAGA_EXPAND_EMPTY SAGA_EXPAND_EMPTY()()()
+#define SAGA_DEFER_1(x) x SAGA_EXPAND_EMPTY()
+#define SAGA_DEFER_2(x) x SAGA_EXPAND_EMPTY SAGA_EXPAND_EMPTY()()
+#define SAGA_DEFER_3(x) x SAGA_EXPAND_EMPTY SAGA_EXPAND_EMPTY SAGA_EXPAND_EMPTY()()()
 
 // Preprocessor IF ELSE Logic Macros
 // ——————————————————————————————————
@@ -48,7 +48,7 @@
 #define SAGA_BOOL(x) SAGA_NOT(SAGA_NOT(x))
 
 #define SAGA_IF_ELSE(condition) _SAGA_IF_ELSE(SAGA_BOOL(condition))
-#define _SAGA_IF_ELSE(condition) SAGA_CAT(SAGA_IF_, condition)
+#define _SAGA_IF_ELSE(condition) SAGA_CAT(_SAGA_IF_, condition)
 
 #define _SAGA_IF_1(...) __VA_ARGS__ _SAGA_IF_1_ELSE
 #define _SAGA_IF_0(...)             _SAGA_IF_0_ELSE
@@ -56,7 +56,7 @@
 #define _SAGA_IF_1_ELSE(...)
 #define _SAGA_IF_0_ELSE(...) __VA_ARGS__
 
-#define HAS_ARGS(...) SAGA_BOOL(SAGA_FIRST(_SAGA_END_OF_ARGUMENTS_ __VA_ARGS__)())
+#define SAGA_HAS_ARGS(...) SAGA_BOOL(SAGA_FIRST(_SAGA_END_OF_ARGUMENTS_ __VA_ARGS__)())
 #define _SAGA_END_OF_ARGUMENTS_() 0
 
 #define SAGA_ADD(X) + X

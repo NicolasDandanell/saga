@@ -4,8 +4,11 @@
 // ADD IF PRESENT CHECK, THEN DEFAULT IF NOT PRESENT
 
 // Include as the first header!
-// TODO: Add if present check
-#include "saga_configurator.h"
+#if __has_include("saga_configuration.h")
+#include "saga_configuration.h"
+#else
+#error "Defaults not implemented yet"
+#endif
 
 #include <stdint.h>
 
@@ -80,15 +83,15 @@ typedef struct PACKED {
 #define SAGA_ERROR_LABEL    "ERROR: "
 #define SAGA_CRITICAL_LABEL "CRIT:  "
 
-#define SAGA_ADD_LOG(level, log) saga_add_log(level, log);
+#define SAGA_ADD_LOG(level, log) saga_add_log(log, level);
 
-#define SAGA_ADD_METADATA(entry_level, entry_message, ...) {                     \
-    SAGA_ENTRY_SECTION static const saga_entry_data_t entry_metadata = {         \
-        .hash             = HASH_ENTRY(entry_message, entry_level, __VA_ARGS__), \
-        .level            = entry_level,                                         \
-        .message          = entry_message,                                       \
-        .data             = CREATE_ENTRY_PARSING_DATA(__VA_ARGS__)               \
-    };                                                                           \
+#define SAGA_ADD_METADATA(entry_level, entry_message, ...) {                          \
+    SAGA_ENTRY_SECTION static const saga_entry_data_t entry_metadata = {              \
+        .hash             = SAGA_HASH_ENTRY(entry_message, entry_level, __VA_ARGS__), \
+        .level            = entry_level,                                              \
+        .message          = entry_message,                                            \
+        .data             = SAGA_CREATE_ENTRY_PARSING_DATA(__VA_ARGS__)               \
+    };                                                                                \
 }
 
 #ifdef SAGA_PRINT_LOGS
@@ -97,11 +100,15 @@ typedef struct PACKED {
 #define SAGA_PRINT_LOG(level, log)
 #endif
 
-#define SAGA_LOG_ENTRY(entry_level, entry_message, ...) {                                                      \
-    SAGA_RUN_CHECKS(entry_level, entry_message, ##__VA_ARGS__)                                                 \
-    SAGA_ADD_METADATA(entry_level, entry_message, ##__VA_ARGS__) /** Adds the log metadata to the .elf file */ \
-    SAGA_BUILD_LOG(entry_level, entry_message, ##__VA_ARGS__)    /** Creates the 'log' array */                \
-    SAGA_ADD_LOG(entry_level, log)                                                                             \
+#define SAGA_LOG_ENTRY(entry_level, entry_message, ...) {        \
+    /** Sanity check log entry */                                \
+    SAGA_RUN_CHECKS(entry_level, entry_message, ##__VA_ARGS__)   \
+    /** Adds the log metadata to the .elf file */                \
+    SAGA_ADD_METADATA(entry_level, entry_message, ##__VA_ARGS__) \
+    /** Creates the 'log' array */                               \
+    SAGA_BUILD_LOG(entry_level, entry_message, ##__VA_ARGS__)    \
+    /** Add log to the ring buffer */                            \
+    SAGA_ADD_LOG(entry_level, log)                               \
 }
 
 // Main Use Macros

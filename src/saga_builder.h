@@ -9,20 +9,20 @@
 // —————————————————————————
 
 // Check if any args. Do nothing if none
-#define SAGA_ADD_TO_ARRAY_FIRST(function, array, counter, ...)                   \
-    SAGA_IF_ELSE(SAGA_HAS_ARGS(__VA_ARGS__))(                                         \
-        SAGA_DEFER3(_SAGA_ADD_TO_ARRAY)()(function, array, counter, __VA_ARGS__) \
-    )(                                                                           \
-        /* Do nothing, just terminate */                                         \
+#define SAGA_ADD_TO_ARRAY_FIRST(function, array, counter, ...)                    \
+    SAGA_IF_ELSE(SAGA_HAS_ARGS(__VA_ARGS__))(                                     \
+        SAGA_DEFER_3(_SAGA_ADD_TO_ARRAY)()(function, array, counter, __VA_ARGS__) \
+    )(                                                                            \
+        /* Do nothing, just terminate */                                          \
     )
 
 // Use memcpy to move args into the array, and use the counter to iterate over the array, increasing it by the size of each arg each time one is copied to the array
-#define SAGA_ADD_TO_ARRAY(function, array, counter, first, ...)                                              \
-    function(first, array, counter);                                                                         \
-    SAGA_IF_ELSE(SAGA_HAS_ARGS(__VA_ARGS__))(                                                                \
-        SAGA_DEFER3(_SAGA_ADD_TO_ARRAY)()(function, array, counter + SAGA_GET_TYPE_SIZE(first), __VA_ARGS__) \
-    )(                                                                                                       \
-        /* Do nothing, just terminate */                                                                     \
+#define SAGA_ADD_TO_ARRAY(function, array, counter, first, ...)                                               \
+    function(first, array, counter);                                                                          \
+    SAGA_IF_ELSE(SAGA_HAS_ARGS(__VA_ARGS__))(                                                                 \
+        SAGA_DEFER_3(_SAGA_ADD_TO_ARRAY)()(function, array, counter + SAGA_GET_TYPE_SIZE(first), __VA_ARGS__) \
+    )(                                                                                                        \
+        /* Do nothing, just terminate */                                                                      \
     )
 
 #define _SAGA_ADD_TO_ARRAY() SAGA_ADD_TO_ARRAY // Indirect call to force macro expansion and allow recursion (A macro can by default not call itself)
@@ -32,10 +32,10 @@
 #define _SAGA_PARSE_ARGS(...) SAGA_ARGS_EVAL(SAGA_ADD_TO_ARRAY_FIRST(SAGA_ADD_BYTES, __VA_ARGS__))
 #define SAGA_PARSE_ARGS(...) _SAGA_PARSE_ARGS(__VA_ARGS__)
 
-#define SAGA_ADD_BYTES(arg, array, counter) do {                                \
-    for (size_t i = 0; i < SAGA_GET_TYPE_SIZE(arg)) {                           \
-        ((uint8_t*)&array[counter])[i] = ((uint8_t*)&arg)[i];                   \
-    }                                                                           \
+#define SAGA_ADD_BYTES(arg, array, counter) do {              \
+    for (uint32_t i = 0; i < SAGA_GET_TYPE_SIZE(arg); ++i) {  \
+        ((uint8_t*)&array[counter])[i] = ((uint8_t*)&arg)[i]; \
+    }                                                         \
 } while(0)
 
 #define SAGA_POPULATE_ARRAY(array, ...) SAGA_PARSE_ARGS(array, 0, ##__VA_ARGS__)
