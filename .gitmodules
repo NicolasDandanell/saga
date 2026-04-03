@@ -1,3 +1,6 @@
 [submodule "test/aceunit"]
 	path = test/aceunit
 	url = https://github.com/christianhujer/aceunit.git
+[submodule "source/hringr"]
+	path = source/hringr
+	url = git@github.com:NicolasDandanell/hringr.git
