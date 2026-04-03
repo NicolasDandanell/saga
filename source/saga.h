@@ -7,7 +7,9 @@
 #if __has_include("saga_configuration.h")
 #include "saga_configuration.h"
 #else
-#error "Defaults not implemented yet"
+// Use default values
+#define SAGA_BUFFER_SIZE        0x200
+#define SAGA_OVERWRITE_OLD_LOGS true
 #endif
 
 #include <stdint.h>
@@ -25,8 +27,8 @@
 
 #define SAGA_BUFFER_SIZE_MASK (SAGA_BUFFER_SIZE - 1)
 
-#define SAGA_MAX_MESSAGE_SIZE 96 // Includes null terminator
-#define SAGA_MAX_DATA_SIZE    16 // Max 31 --> Might be revisited...
+#define SAGA_MAX_MESSAGE_SIZE 128 // Includes null terminator
+#define SAGA_MAX_DATA_SIZE    16  // Max 31 --> Might be revisited...
 #define SAGA_ARGS_EVAL(...)   SAGA_EVAL32(__VA_ARGS__)
 
 #define SAGA_HASH_SIZE 4

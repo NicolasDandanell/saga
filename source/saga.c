@@ -3,6 +3,12 @@
 
 #include "saga.h"
 
+// Modify buffer, so the atomic operations are safer
+// You should still be able to pull and push logs one at the time. No pulling half logs in or out
+// Use static asserts to ensure all provided values are safe
+// Use better atomic synchronization, and perform multi threaded testing to ensure that the functions are interrupt safe
+// Experiment with constexpr to see if SDBM hashing is possible with it at compile time
+
 typedef struct saga_buffer {
     // Number of bytes stored in the buffer
     _Atomic size_t bytes;
