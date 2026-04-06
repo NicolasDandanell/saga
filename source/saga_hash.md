@@ -13,6 +13,7 @@ The goal: for a given hash function, write something like HASH_STRING("funny_bon
 
 The solution: inline the function and hope that the compiler will be clever enough.
 
+```C
 #include <string.h>
 #define HASH(str) generateHash(str, strlen(str))
 
@@ -23,6 +24,7 @@ inline unsigned int generateHash(const char *string, size_t len)
         hash = 65599 * hash + string[i];
     return hash ^ (hash >> 16);
 }
+```
 
 Unfortunately Pope ran into several very problematic issues:
 
@@ -37,17 +39,19 @@ If you read my previous article about C/C++ preprocessor LUT generation, you may
 
 Hence the following implementation:
 
+```C
 #include <string.h>
 #include <stdint.h>
 #include <stdio.h>
 
-#define H1(s,i,x)   (x*65599u+(uint8_t)s[(i)<strlen(s)?strlen(s)-1-(i):strlen(s)]) \
-#define H4(s,i,x)   H1(s,i,H1(s,i+1,H1(s,i+2,H1(s,i+3,x)))) \
-#define H16(s,i,x)  H4(s,i,H4(s,i+4,H4(s,i+8,H4(s,i+12,x)))) \
-#define H64(s,i,x)  H16(s,i,H16(s,i+16,H16(s,i+32,H16(s,i+48,x)))) \
-#define H256(s,i,x) H64(s,i,H64(s,i+64,H64(s,i+128,H64(s,i+192,x)))) \
+#define H1(s,i,x)   (x*65599u+(uint8_t)s[(i)<strlen(s)?strlen(s)-1-(i):strlen(s)])
+#define H4(s,i,x)   H1(s,i,H1(s,i+1,H1(s,i+2,H1(s,i+3,x))))
+#define H16(s,i,x)  H4(s,i,H4(s,i+4,H4(s,i+8,H4(s,i+12,x))))
+#define H64(s,i,x)  H16(s,i,H16(s,i+16,H16(s,i+32,H16(s,i+48,x))))
+#define H256(s,i,x) H64(s,i,H64(s,i+64,H64(s,i+128,H64(s,i+192,x))))
 
 #define HASH(s)    ((uint32_t)(H256(s,0,0)^(H256(s,0,0)>>16)))
+```
 
 It has the following properties:
 
@@ -58,14 +62,17 @@ It has the following properties:
 
 The following code:
 
+```C
 int main(void)
 {
     printf("%08x\n", HASH("funny_bone"));
     printf("%08x\n", HASH("incredibly_large_string_that_gcc_groks_easily"));
 }
+```
 
 Is (correctly) optimised to this with gcc -Os:
 
+```assembly
   ...
   movl    $-238617217, %esi
   movl    $.LC0, %edi
@@ -76,6 +83,7 @@ Is (correctly) optimised to this with gcc -Os:
   xorl    %eax, %eax
   call    printf
   ...
+```
 
 I haven't tested it with Visual Studio. Feedback from this compiler would be very appreciated!
 
