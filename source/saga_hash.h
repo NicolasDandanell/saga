@@ -45,12 +45,14 @@
 // Data Hash
 // ——————————
 
+/// @brief Leaf hash macro, which does the SDBM hashing
 #define SAGA_DATA_HASH(value, hash) (hash) * 65599u + value
 
+/// @brief Last call of the SDBM hash, finishing the recursion
 #define SAGA_HASH_ARG_LAST(level, hash) \
     SAGA_DATA_HASH(level, hash)
 
-// Check if any arguments at all. Return 0 if none
+/// @brief Check if any arguments at all. Return 0 if none
 #define SAGA_HASH_ARG_FIRST(level, hash, ...)                  \
     SAGA_IF_ELSE(SAGA_HAS_ARGS(__VA_ARGS__))(                  \
         SAGA_HASH_ARG(level, hash, __VA_ARGS__)                \
@@ -58,7 +60,7 @@
         SAGA_HASH_ARG_LAST(level, hash) /* And nothing else */ \
     )
 
-// Check if more than one. Return the size of the first if only one, or use it as the starting value of the hash if more than one argument
+/// @brief Check if more than one. Return the size of the first if only one, or use it as the starting value of the hash if more than one argument
 #define SAGA_HASH_ARG(level, hash, first, ...)                                                                    \
     SAGA_IF_ELSE(SAGA_HAS_ARGS(__VA_ARGS__))(                                                                     \
         SAGA_DEFER_3(_SAGA_HASH_ARG)()(level, SAGA_DATA_HASH(SAGA_GET_TYPE_SIZE(first), hash), __VA_ARGS__)       \
@@ -66,15 +68,16 @@
         SAGA_HASH_ARG_LAST(level, SAGA_DATA_HASH(SAGA_GET_TYPE_SIZE(first), hash)) /* And no further recursion */ \
     )
 
+/// @brief Indirect call to force macro expansion and allow recursion (A macro can by default not call itself)
+#define _SAGA_HASH_ARG() SAGA_HASH_ARG
 
-
-#define _SAGA_HASH_ARG() SAGA_HASH_ARG // Indirect call to force macro expansion and allow recursion (A macro can by default not call itself)
-
+/// @brief Calls the hash macro through the macro expander macro @c SAGA_ARGS_EVAL, forcing multiple passes of the preprocessor
 #define SAGA_HASH_DATA(hash, ...) SAGA_ARGS_EVAL(SAGA_HASH_ARG_FIRST(hash, __VA_ARGS__))
 
 // Combined Hash
 // ——————————————
 
+/// @brief Hashes a log entry, by running the the entry message, arguments, and level through an SDBM hash
 #define SAGA_HASH_ENTRY(string, level, ...) SAGA_HASH_DATA(level, SAGA_HASH_STRING(string), __VA_ARGS__)
 
 #endif // SAGA_HASH_H
