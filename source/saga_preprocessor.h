@@ -22,7 +22,8 @@
 #define SAGA_EVAL2(...)    SAGA_EVAL1(SAGA_EVAL1(__VA_ARGS__))
 #define SAGA_EVAL1(...)    __VA_ARGS__
 
-#define SAGA_EXPAND_EMPTY() /* This macro expands to nothing */
+/// @brief This macro expands to nothing
+#define SAGA_EXPAND_EMPTY()
 
 #define SAGA_DEFER_1(x) x SAGA_EXPAND_EMPTY()
 #define SAGA_DEFER_2(x) x SAGA_EXPAND_EMPTY SAGA_EXPAND_EMPTY()()
@@ -60,21 +61,5 @@
 #define _SAGA_END_OF_ARGUMENTS_() 0
 
 #define SAGA_ADD(X) + X
-
-#define _SAGA_TO_STRING(X) #X
-#define SAGA_TO_STRING(X) _SAGA_TO_STRING(X) // Indirect call to force macro expansion
-
-// __VA_ARGS__ expander
-// —————————————————————
-
-#define SAGA_ARGS_256(...) SAGA_ARGS_128(__VA_ARGS__) SAGA_ARGS_128(__VA_ARGS__)
-#define SAGA_ARGS_128(...) SAGA_ARGS_64(__VA_ARGS__)  SAGA_ARGS_64(__VA_ARGS__)
-#define SAGA_ARGS_64(...)  SAGA_ARGS_32(__VA_ARGS__)  SAGA_ARGS_32(__VA_ARGS__)
-#define SAGA_ARGS_32(...)  SAGA_ARGS_16(__VA_ARGS__)  SAGA_ARGS_16(__VA_ARGS__)
-#define SAGA_ARGS_16(...)  SAGA_ARGS_8(__VA_ARGS__)   SAGA_ARGS_8(__VA_ARGS__)
-#define SAGA_ARGS_8(...)   SAGA_ARGS_4(__VA_ARGS__)   SAGA_ARGS_4(__VA_ARGS__)
-#define SAGA_ARGS_4(...)   SAGA_ARGS_2(__VA_ARGS__)   SAGA_ARGS_2(__VA_ARGS__)
-#define SAGA_ARGS_2(...)   SAGA_ARGS_1(__VA_ARGS__)   SAGA_ARGS_1(__VA_ARGS__)
-#define SAGA_ARGS_1(...)   0,
 
 #endif // SAGA_PREPROCESSOR_H

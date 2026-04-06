@@ -9,19 +9,19 @@
 #define _SAGA_GET_TYPE_SIZE(X) sizeof(X)
 #define SAGA_GET_TYPE_SIZE(...) _SAGA_GET_TYPE_SIZE(__VA_ARGS__)
 
-// Check if any args at all. Return 0 if none
+/// @brief Check if there are any args at all. Return 0 if there are none
 #define SAGA_COUNT_BYTES_FIRST(function, ...)               \
     SAGA_IF_ELSE(SAGA_HAS_ARGS(__VA_ARGS__))(               \
-        SAGA_DEFER_3(_COUNT_BYTES)()(function, __VA_ARGS__) \
+        SAGA_DEFER_3(_SAGA_COUNT_BYTES)()(function, __VA_ARGS__) \
     )(                                                      \
         0                                                   \
     )
 
-// Get the size of the arg, and if there are more add the next one:
-// First call:  sizeOfArg_1 +
-// Second call: sizeOfArg_2 +
-// ...
-// Last call:   sizeOfArg_Last
+/// @brief Get the size of the arg, and if there are more add the next one:
+/// @note First call:  sizeof(arg_1)
+///       Second call: + sizeof(arg_2)
+///       ...
+///       Last call:   + sizeof(arg_last)
 #define SAGA_COUNT_BYTES(function, first, ...)                             \
     function(first)                                                        \
     SAGA_IF_ELSE(SAGA_HAS_ARGS(__VA_ARGS__))(                              \
@@ -151,7 +151,7 @@
 
 // Check if any arguments at all
 #define SAGA_PARSE_DATA_SIZE_FIRST(...)          \
-    SAGA_IF_ELSE(SAGA_HAS_ARGS(__VA_ARGS__))(         \
+    SAGA_IF_ELSE(SAGA_HAS_ARGS(__VA_ARGS__))(    \
         SAGA_PARSE_DATA_SIZE_SECOND(__VA_ARGS__) \
     )(                                           \
         { 0 } /* Empty array */                  \

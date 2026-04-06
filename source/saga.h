@@ -1,129 +1,107 @@
-#ifndef LOGS_H
-#define LOGS_H
+#ifndef SAGA_H
+#define SAGA_H
 
-// ADD IF PRESENT CHECK, THEN DEFAULT IF NOT PRESENT
-
-// Include as the first header!
-#if __has_include("saga_configuration.h")
-#include "saga_configuration.h"
-#else
-// Use default values
-#define SAGA_BUFFER_SIZE        0x200
-#define SAGA_OVERWRITE_OLD_LOGS true
-#endif
-
+#include <stdatomic.h>
 #include <stdint.h>
 
-// Configuration of saga
-// ——————————————————————
+#include "hringr.h"
+#include "saga_internal.h"
 
-#ifdef SAGA_UNIT_TEST
-#define SAGA_ENTRY_SECTION
-#define SAGA_METADATA_SECTION
-#else
-#define SAGA_ENTRY_SECTION    __attribute__((section(".saga_entries"), aligned(1), used, retain))
-#define SAGA_METADATA_SECTION __attribute__((section(".saga_metadata"), used, retain))
-#endif
+/// @brief Status enum representing if the operation was successful, or if an error occurred
+typedef enum saga_status {
+    /// @brief The operation was successful
+    SAGA_SUCCESS      = 0,
 
-#define SAGA_BUFFER_SIZE_MASK (SAGA_BUFFER_SIZE - 1)
+    /// @brief The Saga logger was empty, and thus no logs could be pulled out
+    SAGA_EMPTY_BUFFER = 1,
+} saga_status_t;
 
-#define SAGA_MAX_MESSAGE_SIZE 128 // Includes null terminator
-#define SAGA_MAX_DATA_SIZE    16  // Max 31 --> Might be revisited...
-#define SAGA_ARGS_EVAL(...)   SAGA_EVAL32(__VA_ARGS__)
+/// @brief   The configurable log levels in Saga
+/// @details Saga is configurable to only output logs at or below a certain level.
+///          Thus having the log level at @c SAGA_INFO_LEVEL means that logs of that or a lower level will be generated
+///          They follow the same logic as the military "DEFCON" levels, where lower is more critical
+typedef enum saga_level {
+    /// @brief Saga is disabled, and no logs are generated
+    SAGA_DISABLED       = 0b000,
 
-#define SAGA_HASH_SIZE 4
+    /// @brief Breaking errors that result in a system failure
+    SAGA_CRITICAL_LEVEL = 0b001,
 
-#define SAGA_MINIMUM_LOG_SIZE 5 // Size byte + Hash
-#define SAGA_MAXIMUM_LOG_SIZE (SAGA_MINIMUM_LOG_SIZE + SAGA_MAX_DATA_SIZE)
+    /// @brief Unintended behaviour that does affect operations
+    SAGA_ERROR_LEVEL    = 0b010,
 
-#define PACKED __attribute__((packed))
+    /// @brief Unintended behaviour that does not affect operations
+    SAGA_WARNING_LEVEL  = 0b011,
 
-/*
-    · Trace - Only when "tracing" the code and trying to find one part of a function specifically.
-    · Debug - Information that is diagnostically helpful to people more than just developers (IT, customer support, sysadmins, etc.).
-    · Info  - Generally useful information to log (service start/stop, configuration assumptions, etc). Information that is always available but usually not relevant under normal circumstances. This is the out-of-the-box config level.
-    · Warn  - Anything that can potentially cause application oddities, but for which I am automatically recovering. (Such as switching from a primary to backup server, retrying an operation, missing secondary data, etc.)
-    · Error - Any error which is fatal to the operation, but not the service or application (can't open a required file, missing data, etc.). These errors will force user (administrator, or direct user) intervention. These are usually reserved (in my apps) for incorrect connection strings, missing services, etc.
-    · Fatal - Any error that is forcing a shutdown of the service or application to prevent data loss (or further data loss). I reserve these only for the most heinous errors and situations where there is guaranteed to have been data corruption or loss.
-*/
-typedef enum PACKED {
-    SAGA_TRACE_LEVEL    = 0b001, /** Extremely detailed information about everything ongoing */
-    SAGA_DEBUG_LEVEL    = 0b010, /** Details about operational behaviour that goes as intended */
-    SAGA_INFO_LEVEL     = 0b011, /** Usage and operational information. Should usually always be logged */
-    SAGA_WARNING_LEVEL  = 0b100, /** Unintended behaviour that does not affect operations */
-    SAGA_ERROR_LEVEL    = 0b101, /** Unintended behaviour that does affect operations */
-    SAGA_CRITICAL_LEVEL = 0b110, /** Breaking errors that result in a system failure */
+    /// @brief Usage and operational information. Should usually always be logged
+    SAGA_INFO_LEVEL     = 0b100,
+
+    /// @brief Details about operational behaviour that goes as intended
+    SAGA_DEBUG_LEVEL    = 0b101,
+
+    /// @brief Extremely detailed information about everything ongoing
+    SAGA_TRACE_LEVEL    = 0b110,
 } saga_level_t;
 
-#include "saga_checks.h"
-#include "saga_builder.h"
+/// @brief
+typedef struct saga {
+    /// @brief The amount of logs currently in the logger
+    atomic_size_t log_count;
 
-// typedef struct PACKED {
-//     uint8_t  size;   /** Full size of the log */
-//     uint32_t hash;   /** The unique hash for this log */
-//     uint8_t  data[]; /** The data belonging to this log entry */
-// } saga_log_entry_t;
+    /// @brief The current maximum log level
+    atomic_size_t log_level;
 
-typedef struct PACKED {
-    const uint32_t         hash;
-    const saga_level_t level;
-    const char             message[SAGA_MAX_MESSAGE_SIZE];
-    const uint8_t          data[SAGA_MAX_DATA_SIZE];
-} saga_entry_data_t;
-
-#define SAGA_TRACE_COLOUR    "\033[0;34m" // Teal
-#define SAGA_DEBUG_COLOUR    "\033[0;32m" // Green
-#define SAGA_INFO_COLOUR     "\033[0m"    // White
-#define SAGA_WARNING_COLOUR  "\033[0;33m" // Yellow
-#define SAGA_ERROR_COLOUR    "\033[0;31m" // Red
-#define SAGA_CRITICAL_COLOUR "\033[0;35m" // Magenta
-
-#define SAGA_TRACE_LABEL    "TRACE: "
-#define SAGA_DEBUG_LABEL    "DEBUG: "
-#define SAGA_INFO_LABEL     "INFO:  "
-#define SAGA_WARNING_LABEL  "WARN:  "
-#define SAGA_ERROR_LABEL    "ERROR: "
-#define SAGA_CRITICAL_LABEL "CRIT:  "
-
-#define SAGA_ADD_LOG(level, log) saga_add_log(log, level);
-
-#define SAGA_ADD_METADATA(entry_level, entry_message, ...) {                          \
-    SAGA_ENTRY_SECTION static const saga_entry_data_t entry_metadata = {              \
-        .hash             = SAGA_HASH_ENTRY(entry_message, entry_level, __VA_ARGS__), \
-        .level            = entry_level,                                              \
-        .message          = entry_message,                                            \
-        .data             = SAGA_CREATE_ENTRY_PARSING_DATA(__VA_ARGS__)               \
-    };                                                                                \
-}
-
-#ifdef SAGA_PRINT_LOGS
-#define SAGA_PRINT_LOG(level, log) saga_print_log(level, log);
-#else
-#define SAGA_PRINT_LOG(level, log)
-#endif
-
-#define SAGA_LOG_ENTRY(entry_level, entry_message, ...) {        \
-    /** Sanity check log entry */                                \
-    SAGA_RUN_CHECKS(entry_level, entry_message, ##__VA_ARGS__)   \
-    /** Adds the log metadata to the .elf file */                \
-    SAGA_ADD_METADATA(entry_level, entry_message, ##__VA_ARGS__) \
-    /** Creates the 'log' array */                               \
-    SAGA_BUILD_LOG(entry_level, entry_message, ##__VA_ARGS__)    \
-    /** Add log to the ring buffer */                            \
-    SAGA_ADD_LOG(entry_level, log)                               \
-}
+    /// @brief The ring buffer where the logs are stored
+    hringr_t      log_buffer;
+} saga_t;
 
 // Main Use Macros
 // ————————————————
 
-#define SAGA_TRACE(log_message, ...)    SAGA_LOG_ENTRY(SAGA_TRACE_LEVEL,    log_message, ##__VA_ARGS__)
-#define SAGA_DEBUG(log_message, ...)    SAGA_LOG_ENTRY(SAGA_DEBUG_LEVEL,    log_message, ##__VA_ARGS__)
-#define SAGA_INFO(log_message, ...)     SAGA_LOG_ENTRY(SAGA_INFO_LEVEL,     log_message, ##__VA_ARGS__)
-#define SAGA_WARNING(log_message, ...)  SAGA_LOG_ENTRY(SAGA_WARNING_LEVEL,  log_message, ##__VA_ARGS__)
-#define SAGA_ERROR(log_message, ...)    SAGA_LOG_ENTRY(SAGA_ERROR_LEVEL,    log_message, ##__VA_ARGS__)
-#define SAGA_CRITICAL(log_message, ...) SAGA_LOG_ENTRY(SAGA_CRITICAL_LEVEL, log_message, ##__VA_ARGS__)
+/// @brief Trace - Only when "tracing" the code and trying to find one part of a function specifically.
+#define SAGA_TRACE(saga, log_message, ...)    SAGA_LOG_ENTRY(saga, SAGA_TRACE_LEVEL,    log_message, ##__VA_ARGS__)
 
-// Do not use this function directly. Use the above macros instead
-void saga_add_log(uint8_t* log, saga_level_t level);
+/// @brief Debug - Information that is diagnostically helpful to people more than just developers (IT, customer support, sysadmins, etc.)
+#define SAGA_DEBUG(saga, log_message, ...)    SAGA_LOG_ENTRY(saga, SAGA_DEBUG_LEVEL,    log_message, ##__VA_ARGS__)
 
-#endif // LOGS_H
+/// @brief Generally useful information to log (service start/stop, configuration assumptions, etc). Information that is always available but usually not relevant under normal circumstances. This is the default out-of-the-box config level
+#define SAGA_INFO(saga, log_message, ...)     SAGA_LOG_ENTRY(saga, SAGA_INFO_LEVEL,     log_message, ##__VA_ARGS__)
+
+/// @brief Anything that can potentially cause application oddities, but for which I am automatically recovering. (Such as switching from a primary to backup server, retrying an operation, missing secondary data, etc.)
+#define SAGA_WARNING(saga, log_message, ...)  SAGA_LOG_ENTRY(saga, SAGA_WARNING_LEVEL,  log_message, ##__VA_ARGS__)
+
+/// @brief Any error which is fatal to the operation, but not the service or application (can't open a required file, missing data, etc.). These errors will force user (administrator, or direct user) intervention
+#define SAGA_ERROR(saga, log_message, ...)    SAGA_LOG_ENTRY(saga, SAGA_ERROR_LEVEL,    log_message, ##__VA_ARGS__)
+
+/// @brief Any error that is forcing a shutdown of the service or application to prevent data loss (or further data loss). I reserve these only for the most heinous errors and situations where there is guaranteed to have been data corruption or loss
+#define SAGA_CRITICAL(saga, log_message, ...) SAGA_LOG_ENTRY(saga, SAGA_CRITICAL_LEVEL, log_message, ##__VA_ARGS__)
+
+/// @brief Pulls logs out of the Saga logger, and onto the provided buffer
+/// @details The function will try to pull as many full logs as there is space for in the buffer
+/// @param[in, out] saga      Pointer to the Saga logger
+/// @param[out]     data      Buffer where the pulled logs will be placed
+/// @param[in]      data_size Size of the provided data buffer
+/// @param[out]     data_out  Byte size of the logs pulled out of the logger, and onto the data buffer
+/// @return
+saga_status_t saga_pull_logs(saga_t* const saga, uint8_t* const data, const size_t data_size, size_t* const data_out);
+
+/// @brief Gets the current maximum logging level of the saga logger
+/// @param[in, out] saga Pointer to the Saga logger
+/// @return              Returns the current maximum logging level from the @c saga_level_t enum
+static saga_level_t saga_get_level(saga_t* const saga) {
+    /// @note
+    return (saga_level_t)atomic_load_explicit(&saga->log_level, memory_order_acquire);
+}
+
+/// @brief Atomically sets the maximum log level of the Saga logger
+/// @note Any value higher than @c SAGA_TRACE_LEVEL passed to @param level argument will default to @c SAGA_TRACE_LEVEL, as its the highest legal value
+/// @param[in, out] saga  Pointer to the Saga logger
+/// @param[in]      level The log level to be se as the maximum log level. Any logs of a higher level will not be logged
+static void saga_set_level(saga_t* const saga, const saga_level_t level) {
+    const saga_level_t level_to_set = (level > SAGA_TRACE_LEVEL) ? SAGA_TRACE_LEVEL : level;
+
+    /// @note
+    atomic_store_explicit(&saga->log_level, level_to_set, memory_order_release);
+}
+
+#endif // SAGA_H
